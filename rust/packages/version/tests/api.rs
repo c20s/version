@@ -503,6 +503,43 @@ fn next_fails_when_the_pre_release_counter_would_overflow() {
     assert_eq!(previous.next(&with_pre("beta")), Err(NextError::Overflow));
 }
 
+fn with_build(build: &str) -> NextOptions {
+    NextOptions::new().build(build)
+}
+
+#[test]
+fn next_sets_the_requested_build_metadata() {
+    assert_eq!(next("1.2.3", with_build("sha.abc")), "1.3.0+sha.abc");
+    assert_eq!(next("1.2.3", with_build("001")), "1.3.0+001");
+    assert_eq!(next("1.2.3", with_build("sha").change(Change::Fix)), "1.2.4+sha");
+
+    let tagged = v("1.2.3").next(&with_build("sha.abc")).unwrap();
+    assert_eq!(tagged.build_metadata(), Some("sha.abc"));
+}
+
+#[test]
+fn next_combines_pre_release_and_build_metadata() {
+    assert_eq!(next("1.2.3", with_pre("beta").build("sha")), "1.3.0-beta.1+sha");
+    assert_eq!(next("1.3.0-beta.1", with_pre("beta").build("sha")), "1.3.0-beta.2+sha");
+}
+
+#[test]
+fn next_with_only_build_metadata_does_not_lock_the_core() {
+    assert_eq!(next("1.3.0-beta.1", with_build("sha")), "1.3.0+sha");
+    assert_eq!(next("1.3.0-beta.1", with_build("sha").change(Change::Breaking)), "2.0.0+sha");
+}
+
+#[test]
+fn next_rejects_invalid_build_metadata() {
+    for build in ["", "sha!", "sha..1", ".sha", "a+b"] {
+        assert_eq!(
+            v("1.2.3").next(&with_build(build)),
+            Err(NextError::InvalidBuildMetadata),
+            "{build:?}"
+        );
+    }
+}
+
 #[test]
 fn next_works_on_a_loosely_parsed_tag() {
     let previous = Version::parse_loose("v1.2.3").unwrap();
@@ -523,6 +560,7 @@ fn next_error_is_a_displayable_error() {
         NextError::Overflow,
         NextError::InvalidPreRelease,
         NextError::ChangeOnPreRelease,
+        NextError::InvalidBuildMetadata,
     ] {
         let boxed: Box<dyn std::error::Error> = Box::new(err);
 

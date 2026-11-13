@@ -81,7 +81,7 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] Ordering following SemVer precedence (build metadata ignored)
 - [x] `Change` enum: `Fix`, `Feature`, `Breaking`
 - [x] `Version::bump(Change)` with reset of lower parts, drops pre-release and build metadata
-- [ ] `Version::next(...)` combining change, pre-release and build metadata
+- [x] `Version::next(...)` combining change, pre-release and build metadata
 - [x] Default change is `Feature`
 - [x] Change is optional (`NextOptions::change`) to tell explicit from default
 - [x] Explicit change on a pre-release tag with a pre-release requested returns an error (core is locked)
@@ -93,7 +93,7 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] Explicit pre-release (`beta.5`) takes precedence over everything
 - [x] No pre-release requested on a pre-release tag releases the stable version
 - [x] No pre-release requested on a pre-release tag with an explicit change applies the change to the core (`1.3.0-beta.1` + breaking = `2.0.0`)
-- [ ] Optional build metadata on the next version
+- [x] Optional build metadata on the next version
 - [ ] Doc examples for the public API
 
 ### Rust app `rust/apps/version/`

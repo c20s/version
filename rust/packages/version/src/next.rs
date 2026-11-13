@@ -1,11 +1,12 @@
 use std::fmt;
 
-use crate::{pre_release, Change, Version};
+use crate::{build_metadata, pre_release, Change, Version};
 
 #[derive(Debug, Clone, Default)]
 pub struct NextOptions {
     change: Option<Change>,
     pre: Option<String>,
+    build: Option<String>,
 }
 
 impl NextOptions {
@@ -22,6 +23,11 @@ impl NextOptions {
         self.pre = Some(pre.to_owned());
         self
     }
+
+    pub fn build(mut self, build: &str) -> Self {
+        self.build = Some(build.to_owned());
+        self
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -30,6 +36,7 @@ pub enum NextError {
     Overflow,
     InvalidPreRelease,
     ChangeOnPreRelease,
+    InvalidBuildMetadata,
 }
 
 impl fmt::Display for NextError {
@@ -37,6 +44,9 @@ impl fmt::Display for NextError {
         match self {
             NextError::Overflow => write!(f, "a version part is too large to increment"),
             NextError::InvalidPreRelease => write!(f, "the requested pre-release is not valid"),
+            NextError::InvalidBuildMetadata => {
+                write!(f, "the requested build metadata is not valid")
+            }
             NextError::ChangeOnPreRelease => write!(
                 f,
                 "the version is locked while on a pre-release, an explicit change is not allowed"
@@ -57,6 +67,9 @@ impl Version {
     /// (`beta.5`), which is used as given. While staying on a pre-release the core is
     /// locked, so an explicit change is an error.
     ///
+    /// Build metadata is never carried over from the previous version, it is only set
+    /// when requested.
+    ///
     /// ```
     /// use version::{Change, NextOptions, Version};
     ///
@@ -73,12 +86,21 @@ impl Version {
     ///
     /// let beta2 = beta.next(&NextOptions::new().pre("beta")).unwrap();
     /// assert_eq!(beta2.to_string(), "1.3.0-beta.2");
+    ///
+    /// let tagged = previous.next(&NextOptions::new().build("sha.5114f85")).unwrap();
+    /// assert_eq!(tagged.to_string(), "1.3.0+sha.5114f85");
     /// ```
     pub fn next(&self, options: &NextOptions) -> Result<Version, NextError> {
         let requested = options
             .pre
             .as_deref()
             .map(|pre| pre_release(pre).map_err(|_| NextError::InvalidPreRelease))
+            .transpose()?;
+
+        let build = options
+            .build
+            .as_deref()
+            .map(|build| build_metadata(build).map_err(|_| NextError::InvalidBuildMetadata))
             .transpose()?;
 
         if requested.is_some() && self.pre.is_some() && options.change.is_some() {
@@ -95,6 +117,8 @@ impl Version {
         next.pre = requested
             .map(|requested| next_pre_release(self.pre.as_deref(), &requested))
             .transpose()?;
+
+        next.build = build;
 
         Ok(next)
     }
