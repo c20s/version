@@ -36,6 +36,21 @@ impl Version {
         }
     }
 
+    /// Parses the longest suffix of `s` that is a valid SemVer, ignoring anything before it.
+    ///
+    /// ```
+    /// use version::Version;
+    ///
+    /// let v = Version::parse_loose("release-v1.2.3").unwrap();
+    /// assert_eq!(v.to_string(), "1.2.3");
+    /// ```
+    pub fn parse_loose(s: &str) -> Result<Self, ParseError> {
+        match s.char_indices().find_map(|(i, _)| s[i..].parse().ok()) {
+            Some(version) => Ok(version),
+            None => s.parse(),
+        }
+    }
+
     pub fn major(&self) -> u64 {
         self.major
     }

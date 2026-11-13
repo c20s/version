@@ -18,6 +18,7 @@ Full [SemVer](https://semver.org/) parsing, and generating the next version from
 - Strict parsing (`FromStr`) only accepts a valid SemVer: `major.minor.patch` with optional pre-release and build metadata
 - `v1.2.3`, `1.2` and `release-1.2.3` are errors when parsing strictly
 - Loose parsing reads the input from the tail and cuts everything before the longest suffix that is a valid SemVer, e.g. `v1.2.3` and `release-1.2.3` both give `1.2.3`
+- Loose parsing does not accept short forms like `1.2`, and when nothing valid is found it returns the strict error for the whole input
 
 ### Initial development (`0.y.z`)
 
@@ -71,7 +72,7 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [ ] Typed parse error
 - [x] Reject invalid input per the SemVer spec (leading zeros, negatives, empty parts, more than three parts)
 - [x] Strict parsing: only a valid SemVer is accepted
-- [ ] Loose parsing: cut everything before the longest valid SemVer suffix
+- [x] Loose parsing: cut everything before the longest valid SemVer suffix (`Version::parse_loose`)
 - [x] Pre-release identifiers
 - [x] Reject numeric pre-release identifiers with leading zeros (`1.0.0-01`)
 - [x] Build metadata

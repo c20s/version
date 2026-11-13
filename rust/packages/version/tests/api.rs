@@ -218,6 +218,61 @@ fn parse_rejects_invalid_build_metadata() {
 }
 
 #[test]
+fn parse_loose_cuts_everything_before_the_version() {
+    for (input, expected) in [
+        ("v1.2.3", "1.2.3"),
+        ("release-1.2.3", "1.2.3"),
+        ("refs/tags/v1.2.3", "1.2.3"),
+        ("app@1.2.3-beta.1+sha", "1.2.3-beta.1+sha"),
+    ] {
+        let v = Version::parse_loose(input).unwrap();
+
+        assert_eq!(v.to_string(), expected);
+    }
+}
+
+#[test]
+fn parse_loose_keeps_the_whole_version_when_it_is_valid() {
+    for (input, expected) in [
+        ("10.2.3", "10.2.3"),
+        ("v10.20.30", "10.20.30"),
+        ("1.2.3-beta+x", "1.2.3-beta+x"),
+    ] {
+        let v = Version::parse_loose(input).unwrap();
+
+        assert_eq!(v.to_string(), expected);
+    }
+}
+
+#[test]
+fn parse_loose_matches_strict_parsing_for_valid_input() {
+    for input in ["0.0.0", "1.2.3", "1.2.3-beta.1", "1.2.3+sha", "1.2.3-rc.1+sha.5"] {
+        let loose = Version::parse_loose(input).unwrap();
+        let strict: Version = input.parse().unwrap();
+
+        assert_eq!(loose, strict);
+        assert_eq!(loose.build_metadata(), strict.build_metadata());
+    }
+}
+
+#[test]
+fn parse_loose_does_not_accept_short_forms() {
+    for input in ["", "latest", "build42", "1", "1.2", "v1.2"] {
+        assert!(Version::parse_loose(input).is_err());
+    }
+}
+
+#[test]
+fn parse_loose_returns_the_strict_error_when_nothing_is_found() {
+    for input in ["", "latest", "build42", "v1.2", "1.2.3.a"] {
+        assert_eq!(
+            Version::parse_loose(input),
+            input.parse::<Version>()
+        );
+    }
+}
+
+#[test]
 fn parse_error_is_a_displayable_error() {
     let err = "nope".parse::<Version>().unwrap_err();
     let boxed: Box<dyn std::error::Error> = Box::new(err);
