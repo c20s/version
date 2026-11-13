@@ -75,6 +75,64 @@ fn parse_accepts_zero_as_a_part() {
 }
 
 #[test]
+fn parse_exposes_the_pre_release() {
+    let with: Version = "1.2.3-beta.1".parse().unwrap();
+    let without: Version = "1.2.3".parse().unwrap();
+
+    assert_eq!(with.pre_release(), Some("beta.1"));
+    assert_eq!(without.pre_release(), None);
+}
+
+#[test]
+fn display_round_trips_with_pre_release() {
+    for input in [
+        "1.2.3-alpha",
+        "1.0.0-alpha.1",
+        "1.0.0-0.3.7",
+        "1.0.0-x.7.z.92",
+        "1.0.0-alpha-a.b-c",
+    ] {
+        let v: Version = input.parse().unwrap();
+
+        assert_eq!(v.to_string(), input);
+    }
+}
+
+#[test]
+fn short_forms_combine_with_pre_release() {
+    for (input, expected) in [("1-beta", "1.0.0-beta"), ("1.2-rc.1", "1.2.0-rc.1")] {
+        let v: Version = input.parse().unwrap();
+
+        assert_eq!(v.to_string(), expected);
+    }
+}
+
+#[test]
+fn versions_with_different_pre_releases_are_not_equal() {
+    let a: Version = "1.2.3-alpha".parse().unwrap();
+    let b: Version = "1.2.3-beta".parse().unwrap();
+    let stable: Version = "1.2.3".parse().unwrap();
+
+    assert_ne!(a, b);
+    assert_ne!(a, stable);
+}
+
+#[test]
+fn parse_rejects_invalid_pre_release() {
+    for input in [
+        "1.2.3-",
+        "1.2.3-beta.",
+        "1.2.3-.beta",
+        "1.2.3-be..ta",
+        "1.2.3-beta!",
+        "1.2.3-b_c",
+        "1.2.3-é",
+    ] {
+        assert_eq!(input.parse::<Version>(), Err(ParseError::InvalidPreRelease));
+    }
+}
+
+#[test]
 fn parse_error_is_a_displayable_error() {
     let err = "nope".parse::<Version>().unwrap_err();
     let boxed: Box<dyn std::error::Error> = Box::new(err);

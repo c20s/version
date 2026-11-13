@@ -20,6 +20,7 @@ pub struct Version {
     major: u64,
     minor: u64,
     patch: u64,
+    pre: Option<String>,
 }
 
 impl Version {
@@ -28,6 +29,7 @@ impl Version {
             major,
             minor,
             patch,
+            pre: None,
         }
     }
 
@@ -42,13 +44,22 @@ impl Version {
     pub fn patch(&self) -> u64 {
         self.patch
     }
+
+    pub fn pre_release(&self) -> Option<&str> {
+        self.pre.as_deref()
+    }
 }
 
 impl FromStr for Version {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split('.').collect();
+        let (core, pre) = match s.split_once('-') {
+            Some((core, pre)) => (core, Some(pre)),
+            None => (s, None),
+        };
+
+        let parts: Vec<&str> = core.split('.').collect();
         if parts.len() > 3 {
             return Err(ParseError::PartCount);
         }
@@ -59,7 +70,21 @@ impl FromStr for Version {
         }
 
         let [major, minor, patch] = numbers;
-        Ok(Self::new(major, minor, patch))
+        let mut version = Self::new(major, minor, patch);
+        version.pre = pre.map(pre_release).transpose()?;
+        Ok(version)
+    }
+}
+
+fn pre_release(part: &str) -> Result<String, ParseError> {
+    let valid = part
+        .split('.')
+        .all(|id| !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'));
+
+    if valid {
+        Ok(part.to_owned())
+    } else {
+        Err(ParseError::InvalidPreRelease)
     }
 }
 
@@ -75,7 +100,11 @@ fn number(part: &str) -> Result<u64, ParseError> {
 
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)?;
+        if let Some(pre) = &self.pre {
+            write!(f, "-{pre}")?;
+        }
+        Ok(())
     }
 }
 
