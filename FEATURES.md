@@ -78,7 +78,7 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] Build metadata
 - [x] Equality and hashing ignore build metadata
 - [x] Output never includes the `v` prefix
-- [ ] Ordering following SemVer precedence (build metadata ignored)
+- [x] Ordering following SemVer precedence (build metadata ignored)
 - [ ] `Change` enum: `Fix`, `Feature`, `Breaking`
 - [ ] `Version::next(Change)` with reset of lower parts
 - [ ] Default change is `Feature`

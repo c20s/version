@@ -2,6 +2,7 @@
 
 mod error;
 
+use std::cmp::Ordering;
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
@@ -88,6 +89,45 @@ impl Hash for Version {
         self.patch.hash(state);
         self.pre.hash(state);
     }
+}
+
+impl Ord for Version {
+    fn cmp(&self, other: &Self) -> Ordering {
+        (self.major, self.minor, self.patch)
+            .cmp(&(other.major, other.minor, other.patch))
+            .then_with(|| match (&self.pre, &other.pre) {
+                (None, None) => Ordering::Equal,
+                (None, Some(_)) => Ordering::Greater,
+                (Some(_), None) => Ordering::Less,
+                (Some(a), Some(b)) => identifiers(a).cmp(identifiers(b)),
+            })
+    }
+}
+
+impl PartialOrd for Version {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum Identifier<'a> {
+    Numeric(usize, &'a str),
+    Alphanumeric(&'a str),
+}
+
+impl<'a> From<&'a str> for Identifier<'a> {
+    fn from(id: &'a str) -> Self {
+        if id.bytes().all(|b| b.is_ascii_digit()) {
+            Identifier::Numeric(id.len(), id)
+        } else {
+            Identifier::Alphanumeric(id)
+        }
+    }
+}
+
+fn identifiers(pre: &str) -> impl Iterator<Item = Identifier<'_>> {
+    pre.split('.').map(Identifier::from)
 }
 
 impl FromStr for Version {

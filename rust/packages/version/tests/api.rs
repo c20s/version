@@ -5,6 +5,7 @@
 //!
 //! Other tests (unit tests inside `src/`) can change freely.
 
+use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use version::{ParseError, Version};
@@ -269,6 +270,81 @@ fn parse_loose_returns_the_strict_error_when_nothing_is_found() {
             Version::parse_loose(input),
             input.parse::<Version>()
         );
+    }
+}
+
+fn v(s: &str) -> Version {
+    s.parse().unwrap()
+}
+
+#[test]
+fn ordering_compares_major_minor_patch_numerically() {
+    let ascending = ["0.9.9", "1.0.0", "1.2.3", "1.2.4", "1.3.0", "1.10.0", "2.0.0", "10.0.0"];
+
+    for pair in ascending.windows(2) {
+        assert!(v(pair[0]) < v(pair[1]), "{} < {}", pair[0], pair[1]);
+    }
+}
+
+#[test]
+fn ordering_puts_a_pre_release_below_its_release() {
+    assert!(v("1.0.0-rc.1") < v("1.0.0"));
+    assert!(v("1.0.0") < v("1.0.1-alpha"));
+}
+
+#[test]
+fn ordering_follows_the_semver_precedence_example() {
+    let expected = [
+        "1.0.0-alpha",
+        "1.0.0-alpha.1",
+        "1.0.0-alpha.beta",
+        "1.0.0-beta",
+        "1.0.0-beta.2",
+        "1.0.0-beta.11",
+        "1.0.0-rc.1",
+        "1.0.0",
+    ];
+
+    let mut versions: Vec<Version> = expected.iter().rev().map(|s| v(s)).collect();
+    versions.sort();
+
+    let sorted: Vec<String> = versions.iter().map(Version::to_string).collect();
+    assert_eq!(sorted, expected);
+}
+
+#[test]
+fn ordering_ranks_numeric_pre_release_identifiers_below_alphanumeric() {
+    assert!(v("1.0.0-1") < v("1.0.0-alpha"));
+    assert!(v("1.0.0-alpha.1") < v("1.0.0-alpha.a"));
+}
+
+#[test]
+fn ordering_handles_numeric_pre_release_identifiers_larger_than_u64() {
+    assert!(v("1.0.0-99999999999999999999") < v("1.0.0-100000000000000000000"));
+}
+
+#[test]
+fn ordering_ignores_build_metadata() {
+    assert_eq!(v("1.2.3+a").cmp(&v("1.2.3+b")), Ordering::Equal);
+    assert_eq!(v("1.2.3+a").partial_cmp(&v("1.2.3")), Some(Ordering::Equal));
+    assert!(v("1.2.3+z") < v("1.2.4+a"));
+}
+
+#[test]
+fn ordering_agrees_with_equality() {
+    let versions = [
+        "1.0.0",
+        "1.0.0+a",
+        "1.0.0-alpha",
+        "1.0.0-alpha+b",
+        "1.0.0-alpha.1",
+        "1.0.1",
+    ];
+
+    for a in versions {
+        for b in versions {
+            assert_eq!(v(a) == v(b), v(a).cmp(&v(b)) == Ordering::Equal, "{a} {b}");
+        }
     }
 }
 
