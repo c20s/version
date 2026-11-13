@@ -11,3 +11,13 @@ When consumers depend on our software we want them to be able to use the latest 
 We use the SemverScheme to communicate breaking changes, new features and fixes.
 
 🔗 [SemVer](https://semver.org/)
+
+### Packages
+
+- [ ] [rust] **version** `rust/packages/version/`
+- [ ] [ts] **version** `ts/packages/version/`
+
+### apps
+
+- [ ] [rust] **version** `rust/apps/version/`
+- [ ] [ts] **version** `ts/packages/version/`
