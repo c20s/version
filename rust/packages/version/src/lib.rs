@@ -1,5 +1,6 @@
 //! Human readable version scheme based on [SemVer](https://semver.org/).
 
+mod change;
 mod error;
 
 use std::cmp::Ordering;
@@ -7,6 +8,7 @@ use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
+pub use change::Change;
 pub use error::ParseError;
 
 /// A version with the form `major.minor.patch`.
@@ -50,6 +52,27 @@ impl Version {
             Some(version) => Ok(version),
             None => s.parse(),
         }
+    }
+
+    /// Applies a change to the core version and drops pre-release and build metadata.
+    ///
+    /// Returns `None` if a part would overflow.
+    ///
+    /// ```
+    /// use version::{Change, Version};
+    ///
+    /// let v: Version = "1.2.3".parse().unwrap();
+    /// assert_eq!(v.bump(Change::Feature).unwrap().to_string(), "1.3.0");
+    /// ```
+    pub fn bump(&self, change: Change) -> Option<Self> {
+        let (major, minor, patch) = match (self.major, change) {
+            (0, Change::Breaking) => (0, self.minor.checked_add(1)?, 0),
+            (0, _) => (0, self.minor, self.patch.checked_add(1)?),
+            (_, Change::Breaking) => (self.major.checked_add(1)?, 0, 0),
+            (_, Change::Feature) => (self.major, self.minor.checked_add(1)?, 0),
+            (_, Change::Fix) => (self.major, self.minor, self.patch.checked_add(1)?),
+        };
+        Some(Self::new(major, minor, patch))
     }
 
     pub fn major(&self) -> u64 {

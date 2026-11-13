@@ -79,12 +79,13 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] Equality and hashing ignore build metadata
 - [x] Output never includes the `v` prefix
 - [x] Ordering following SemVer precedence (build metadata ignored)
-- [ ] `Change` enum: `Fix`, `Feature`, `Breaking`
-- [ ] `Version::next(Change)` with reset of lower parts
+- [x] `Change` enum: `Fix`, `Feature`, `Breaking`
+- [x] `Version::bump(Change)` with reset of lower parts, drops pre-release and build metadata
+- [ ] `Version::next(...)` combining change, pre-release and build metadata
 - [ ] Default change is `Feature`
 - [ ] Change is optional (`Option<Change>`) to tell explicit from default
 - [ ] Explicit change on a pre-release tag with a pre-release requested returns an error (core is locked)
-- [ ] `0.y.z` rules: breaking bumps minor, feature and fix bump patch
+- [x] `0.y.z` rules: breaking bumps minor, feature and fix bump patch
 - [ ] Explicit release of `1.0.0` (not reachable through `next`)
 - [ ] Optional pre-release on the next version
 - [ ] Bare label bumps the pre-release number when the label matches the previous tag

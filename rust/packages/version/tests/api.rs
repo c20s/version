@@ -8,7 +8,7 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use version::{ParseError, Version};
+use version::{Change, ParseError, Version};
 
 #[test]
 fn parse_exposes_the_three_parts() {
@@ -346,6 +346,59 @@ fn ordering_agrees_with_equality() {
             assert_eq!(v(a) == v(b), v(a).cmp(&v(b)) == Ordering::Equal, "{a} {b}");
         }
     }
+}
+
+fn bumped(input: &str, change: Change) -> String {
+    v(input).bump(change).unwrap().to_string()
+}
+
+#[test]
+fn bump_applies_the_change_and_resets_lower_parts() {
+    assert_eq!(bumped("1.2.3", Change::Fix), "1.2.4");
+    assert_eq!(bumped("1.2.3", Change::Feature), "1.3.0");
+    assert_eq!(bumped("1.2.3", Change::Breaking), "2.0.0");
+}
+
+#[test]
+fn bump_treats_minor_as_breaking_before_1_0_0() {
+    assert_eq!(bumped("0.3.1", Change::Breaking), "0.4.0");
+    assert_eq!(bumped("0.3.1", Change::Feature), "0.3.2");
+    assert_eq!(bumped("0.3.1", Change::Fix), "0.3.2");
+    assert_eq!(bumped("0.0.0", Change::Breaking), "0.1.0");
+    assert_eq!(bumped("0.0.5", Change::Feature), "0.0.6");
+}
+
+#[test]
+fn bump_never_reaches_1_0_0_from_0_y_z() {
+    for change in [Change::Fix, Change::Feature, Change::Breaking] {
+        assert_eq!(v(&bumped("0.9.9", change)).major(), 0);
+    }
+}
+
+#[test]
+fn bump_applies_to_the_core_and_drops_pre_release_and_build_metadata() {
+    assert_eq!(bumped("1.3.0-beta.1+sha", Change::Breaking), "2.0.0");
+    assert_eq!(bumped("1.3.0-beta.1+sha", Change::Feature), "1.4.0");
+    assert_eq!(bumped("1.3.0-beta.1+sha", Change::Fix), "1.3.1");
+}
+
+#[test]
+fn bump_always_produces_a_greater_version() {
+    for input in ["0.0.0", "0.3.1", "1.2.3", "1.3.0-beta.1", "1.2.3+sha"] {
+        for change in [Change::Fix, Change::Feature, Change::Breaking] {
+            assert!(v(input).bump(change).unwrap() > v(input), "{input} {change:?}");
+        }
+    }
+}
+
+#[test]
+fn bump_returns_none_when_a_part_would_overflow() {
+    let max = u64::MAX;
+
+    assert_eq!(v(&format!("1.2.{max}")).bump(Change::Fix), None);
+    assert_eq!(v(&format!("1.{max}.0")).bump(Change::Feature), None);
+    assert_eq!(v(&format!("{max}.0.0")).bump(Change::Breaking), None);
+    assert!(v(&format!("{max}.0.0")).bump(Change::Feature).is_some());
 }
 
 #[test]
