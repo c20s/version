@@ -8,6 +8,7 @@ Full [SemVer](https://semver.org/) parsing, and generating the next version from
 - Output never has a `v` prefix: `v1.2.3` in, `1.3.0` out
 - Input may omit minor and patch, they default to `0`: `1` is `1.0.0`, `1.2` is `1.2.0`
 - Output is always the full `major.minor.patch`
+- Build metadata is ignored for equality and ordering: `1.2.3+a` equals `1.2.3+b`
 - The change kind defaults to **feature** (minor bump)
 - The change kind can be overridden with **fix** (patch), **feature** (minor) or **breaking** (major)
 - Pre-release and build metadata are optional on the generated version
@@ -67,7 +68,8 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] Lenient parsing: missing minor and patch default to `0` (`1` is `1.0.0`, `1.2` is `1.2.0`)
 - [x] Pre-release identifiers
 - [x] Reject numeric pre-release identifiers with leading zeros (`1.0.0-01`)
-- [ ] Build metadata
+- [x] Build metadata
+- [x] Equality and hashing ignore build metadata
 - [ ] Optional `v` tag prefix when parsing
 - [ ] Output never includes the `v` prefix
 - [ ] Ordering following SemVer precedence (build metadata ignored)

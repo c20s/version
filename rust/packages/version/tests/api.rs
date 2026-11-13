@@ -5,6 +5,8 @@
 //!
 //! Other tests (unit tests inside `src/`) can change freely.
 
+use std::collections::HashSet;
+
 use version::{ParseError, Version};
 
 #[test]
@@ -145,6 +147,91 @@ fn parse_accepts_zero_in_pre_release_identifiers() {
         let v: Version = input.parse().unwrap();
 
         assert_eq!(v.to_string(), input);
+    }
+}
+
+#[test]
+fn parse_exposes_the_build_metadata() {
+    let with: Version = "1.2.3+sha.abc".parse().unwrap();
+    let without: Version = "1.2.3".parse().unwrap();
+
+    assert_eq!(with.build_metadata(), Some("sha.abc"));
+    assert_eq!(without.build_metadata(), None);
+}
+
+#[test]
+fn display_round_trips_with_build_metadata() {
+    for input in [
+        "1.2.3+sha.abc",
+        "1.0.0+001",
+        "1.0.0+20130313144700",
+        "1.0.0-beta+exp.sha.5114f85",
+        "1.0.0+21AF26D3-117B344092BD",
+    ] {
+        let v: Version = input.parse().unwrap();
+
+        assert_eq!(v.to_string(), input);
+    }
+}
+
+#[test]
+fn pre_release_and_build_metadata_are_separate() {
+    let v: Version = "1.2.3-beta-1+sha-2".parse().unwrap();
+
+    assert_eq!(v.pre_release(), Some("beta-1"));
+    assert_eq!(v.build_metadata(), Some("sha-2"));
+}
+
+#[test]
+fn short_forms_combine_with_build_metadata() {
+    let v: Version = "1.2+sha".parse().unwrap();
+
+    assert_eq!(v.to_string(), "1.2.0+sha");
+}
+
+#[test]
+fn equality_ignores_build_metadata() {
+    let a: Version = "1.2.3+a".parse().unwrap();
+    let b: Version = "1.2.3+b".parse().unwrap();
+    let none: Version = "1.2.3".parse().unwrap();
+
+    assert_eq!(a, b);
+    assert_eq!(a, none);
+}
+
+#[test]
+fn equality_still_compares_pre_release() {
+    let a: Version = "1.2.3-alpha+x".parse().unwrap();
+    let b: Version = "1.2.3-beta+x".parse().unwrap();
+
+    assert_ne!(a, b);
+}
+
+#[test]
+fn hash_agrees_with_equality() {
+    let a: Version = "1.2.3+a".parse().unwrap();
+    let b: Version = "1.2.3+b".parse().unwrap();
+
+    let set: HashSet<Version> = [a, b].into_iter().collect();
+
+    assert_eq!(set.len(), 1);
+}
+
+#[test]
+fn parse_rejects_invalid_build_metadata() {
+    for input in [
+        "1.2.3+",
+        "1.2.3+sha.",
+        "1.2.3+.sha",
+        "1.2.3+sha..abc",
+        "1.2.3+sha!",
+        "1.2.3+a+b",
+        "1.2.3-beta+",
+    ] {
+        assert_eq!(
+            input.parse::<Version>(),
+            Err(ParseError::InvalidBuildMetadata)
+        );
     }
 }
 

@@ -7,6 +7,7 @@ pub enum ParseError {
     InvalidNumber,
     LeadingZero,
     InvalidPreRelease,
+    InvalidBuildMetadata,
 }
 
 impl fmt::Display for ParseError {
@@ -18,6 +19,10 @@ impl fmt::Display for ParseError {
             ParseError::InvalidPreRelease => write!(
                 f,
                 "pre-release must be dot separated identifiers of [0-9A-Za-z-]"
+            ),
+            ParseError::InvalidBuildMetadata => write!(
+                f,
+                "build metadata must be dot separated identifiers of [0-9A-Za-z-]"
             ),
         }
     }
