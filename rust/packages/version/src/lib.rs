@@ -48,14 +48,18 @@ impl FromStr for Version {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts = s.split('.');
-        let (Some(major), Some(minor), Some(patch), None) =
-            (parts.next(), parts.next(), parts.next(), parts.next())
-        else {
+        let parts: Vec<&str> = s.split('.').collect();
+        if parts.len() > 3 {
             return Err(ParseError::PartCount);
-        };
+        }
 
-        Ok(Self::new(number(major)?, number(minor)?, number(patch)?))
+        let mut numbers = [0; 3];
+        for (slot, part) in numbers.iter_mut().zip(parts) {
+            *slot = number(part)?;
+        }
+
+        let [major, minor, patch] = numbers;
+        Ok(Self::new(major, minor, patch))
     }
 }
 

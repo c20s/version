@@ -36,22 +36,33 @@ fn equal_versions_are_equal() {
 }
 
 #[test]
-fn parse_rejects_wrong_number_of_parts() {
-    for input in ["", "1", "1.2", "1.2.3.4"] {
+fn parse_fills_missing_minor_and_patch_with_zero() {
+    for (input, expected) in [("1", "1.0.0"), ("1.2", "1.2.0"), ("0", "0.0.0")] {
+        let v: Version = input.parse().unwrap();
+
+        assert_eq!(v.to_string(), expected);
+    }
+}
+
+#[test]
+fn parse_rejects_more_than_three_parts() {
+    for input in ["1.2.3.4", "1.2.3.a", "1.2.3."] {
         assert_eq!(input.parse::<Version>(), Err(ParseError::PartCount));
     }
 }
 
 #[test]
 fn parse_rejects_non_numeric_parts() {
-    for input in ["a.2.3", "1.b.3", "1.2.c", "1..3", "-1.2.3", "+1.2.3", "1.2.3 "] {
+    for input in [
+        "", "1.", ".1", "a", "a.2.3", "1.b.3", "1.2.c", "1..3", "-1.2.3", "+1.2.3", "1.2.3 ",
+    ] {
         assert_eq!(input.parse::<Version>(), Err(ParseError::InvalidNumber));
     }
 }
 
 #[test]
 fn parse_rejects_leading_zeros() {
-    for input in ["01.2.3", "1.02.3", "1.2.03", "00.0.0"] {
+    for input in ["01", "01.2", "01.2.3", "1.02.3", "1.2.03", "00.0.0"] {
         assert_eq!(input.parse::<Version>(), Err(ParseError::LeadingZero));
     }
 }

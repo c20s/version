@@ -64,7 +64,7 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] Parse `x.y.z` and `Display` (round-trip)
 - [ ] Typed parse error
 - [x] Reject invalid input per the SemVer spec (leading zeros, negatives, empty parts, more than three parts)
-- [ ] Lenient parsing: missing minor and patch default to `0` (`1` is `1.0.0`, `1.2` is `1.2.0`)
+- [x] Lenient parsing: missing minor and patch default to `0` (`1` is `1.0.0`, `1.2` is `1.2.0`)
 - [ ] Pre-release identifiers
 - [ ] Build metadata
 - [ ] Optional `v` tag prefix when parsing
