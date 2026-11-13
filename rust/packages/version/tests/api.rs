@@ -441,6 +441,68 @@ fn next_applies_an_explicit_change_when_releasing_from_a_pre_release() {
     assert_eq!(next("1.3.0-beta.1", with(Change::Fix)), "1.3.1");
 }
 
+fn with_pre(pre: &str) -> NextOptions {
+    NextOptions::new().pre(pre)
+}
+
+#[test]
+fn next_pre_label_bumps_the_counter_when_the_label_matches() {
+    assert_eq!(next("1.3.0-beta.1", with_pre("beta")), "1.3.0-beta.2");
+    assert_eq!(next("1.3.0-beta.9", with_pre("beta")), "1.3.0-beta.10");
+    assert_eq!(next("1.3.0-beta", with_pre("beta")), "1.3.0-beta.1");
+    assert_eq!(next("1.3.0-beta.1+sha", with_pre("beta")), "1.3.0-beta.2");
+}
+
+#[test]
+fn next_pre_label_starts_at_one_when_the_label_differs() {
+    assert_eq!(next("1.3.0-beta.1", with_pre("alpha")), "1.3.0-alpha.1");
+    assert_eq!(next("1.3.0-beta.1", with_pre("rc")), "1.3.0-rc.1");
+}
+
+#[test]
+fn next_explicit_pre_release_is_used_as_given() {
+    assert_eq!(next("1.3.0-beta.1", with_pre("beta.5")), "1.3.0-beta.5");
+    assert_eq!(next("1.3.0-beta.1", with_pre("alpha.2")), "1.3.0-alpha.2");
+    assert_eq!(next("1.3.0-beta.5", with_pre("beta.1")), "1.3.0-beta.1");
+    assert_eq!(next("1.2.3", with_pre("beta.5")), "1.3.0-beta.5");
+}
+
+#[test]
+fn next_applies_the_change_first_when_starting_a_pre_release_from_stable() {
+    assert_eq!(next("1.2.3", with_pre("beta")), "1.3.0-beta.1");
+    assert_eq!(next("1.2.3", with_pre("beta").change(Change::Breaking)), "2.0.0-beta.1");
+    assert_eq!(next("1.2.3", with_pre("beta").change(Change::Fix)), "1.2.4-beta.1");
+    assert_eq!(next("0.3.1", with_pre("beta")), "0.3.2-beta.1");
+}
+
+#[test]
+fn next_locks_the_core_while_staying_on_a_pre_release() {
+    for change in [Change::Fix, Change::Feature, Change::Breaking] {
+        let previous = v("1.3.0-beta.1");
+        let options = with_pre("beta").change(change);
+
+        assert_eq!(previous.next(&options), Err(NextError::ChangeOnPreRelease));
+    }
+}
+
+#[test]
+fn next_rejects_an_invalid_requested_pre_release() {
+    for pre in ["", "beta!", "beta..1", ".beta", "beta.01"] {
+        assert_eq!(
+            v("1.2.3").next(&with_pre(pre)),
+            Err(NextError::InvalidPreRelease),
+            "{pre:?}"
+        );
+    }
+}
+
+#[test]
+fn next_fails_when_the_pre_release_counter_would_overflow() {
+    let previous = v(&format!("1.3.0-beta.{}", u64::MAX));
+
+    assert_eq!(previous.next(&with_pre("beta")), Err(NextError::Overflow));
+}
+
 #[test]
 fn next_works_on_a_loosely_parsed_tag() {
     let previous = Version::parse_loose("v1.2.3").unwrap();
@@ -457,9 +519,15 @@ fn next_fails_when_a_part_would_overflow() {
 
 #[test]
 fn next_error_is_a_displayable_error() {
-    let boxed: Box<dyn std::error::Error> = Box::new(NextError::Overflow);
+    for err in [
+        NextError::Overflow,
+        NextError::InvalidPreRelease,
+        NextError::ChangeOnPreRelease,
+    ] {
+        let boxed: Box<dyn std::error::Error> = Box::new(err);
 
-    assert!(!boxed.to_string().is_empty());
+        assert!(!boxed.to_string().is_empty());
+    }
 }
 
 #[test]
