@@ -60,7 +60,7 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 ### Rust package `rust/packages/version/`
 
 - [x] Workspace and crate skeleton
-- [ ] `Version` type (`major`, `minor`, `patch`)
+- [x] `Version` type (`major`, `minor`, `patch`)
 - [ ] Parse `x.y.z` and `Display` (round-trip)
 - [ ] Typed parse error
 - [ ] Reject invalid input per the SemVer spec (leading zeros, negatives, empty parts, more than three parts)
