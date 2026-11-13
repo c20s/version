@@ -1,6 +1,20 @@
 //! Human readable version scheme based on [SemVer](https://semver.org/).
 
+mod error;
+
+use std::fmt;
+use std::str::FromStr;
+
+pub use error::ParseError;
+
 /// A version with the form `major.minor.patch`.
+///
+/// ```
+/// use version::Version;
+///
+/// let v: Version = "1.2.3".parse().unwrap();
+/// assert_eq!(v.to_string(), "1.2.3");
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Version {
     major: u64,
@@ -9,7 +23,6 @@ pub struct Version {
 }
 
 impl Version {
-    #[allow(dead_code)]
     pub(crate) fn new(major: u64, minor: u64, patch: u64) -> Self {
         Self {
             major,
@@ -28,6 +41,34 @@ impl Version {
 
     pub fn patch(&self) -> u64 {
         self.patch
+    }
+}
+
+impl FromStr for Version {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut parts = s.split('.');
+        let (Some(major), Some(minor), Some(patch), None) =
+            (parts.next(), parts.next(), parts.next(), parts.next())
+        else {
+            return Err(ParseError::PartCount);
+        };
+
+        Ok(Self::new(number(major)?, number(minor)?, number(patch)?))
+    }
+}
+
+fn number(part: &str) -> Result<u64, ParseError> {
+    if part.is_empty() || !part.bytes().all(|b| b.is_ascii_digit()) {
+        return Err(ParseError::InvalidNumber);
+    }
+    part.parse().map_err(|_| ParseError::InvalidNumber)
+}
+
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
     }
 }
 
