@@ -38,33 +38,24 @@ fn equal_versions_are_equal() {
 }
 
 #[test]
-fn parse_fills_missing_minor_and_patch_with_zero() {
-    for (input, expected) in [("1", "1.0.0"), ("1.2", "1.2.0"), ("0", "0.0.0")] {
-        let v: Version = input.parse().unwrap();
-
-        assert_eq!(v.to_string(), expected);
-    }
-}
-
-#[test]
-fn parse_rejects_more_than_three_parts() {
-    for input in ["1.2.3.4", "1.2.3.a", "1.2.3."] {
+fn parse_rejects_wrong_number_of_parts() {
+    for input in [
+        "", "a", "1", "1.2", "1.2.3.4", "1.2.3.a", "1.2.3.", "-1.2.3", "+1.2.3",
+    ] {
         assert_eq!(input.parse::<Version>(), Err(ParseError::PartCount));
     }
 }
 
 #[test]
 fn parse_rejects_non_numeric_parts() {
-    for input in [
-        "", "1.", ".1", "a", "a.2.3", "1.b.3", "1.2.c", "1..3", "-1.2.3", "+1.2.3", "1.2.3 ",
-    ] {
+    for input in ["a.2.3", "1.b.3", "1.2.c", "1..3", "1.2.", ".1.2", "1.2.3 "] {
         assert_eq!(input.parse::<Version>(), Err(ParseError::InvalidNumber));
     }
 }
 
 #[test]
 fn parse_rejects_leading_zeros() {
-    for input in ["01", "01.2", "01.2.3", "1.02.3", "1.2.03", "00.0.0"] {
+    for input in ["01.2.3", "1.02.3", "1.2.03", "00.0.0"] {
         assert_eq!(input.parse::<Version>(), Err(ParseError::LeadingZero));
     }
 }
@@ -74,6 +65,13 @@ fn parse_accepts_zero_as_a_part() {
     let v: Version = "0.0.0".parse().unwrap();
 
     assert_eq!((v.major(), v.minor(), v.patch()), (0, 0, 0));
+}
+
+#[test]
+fn parse_rejects_a_v_prefix() {
+    for input in ["v1.2.3", "V1.2.3", "v1.2.3-beta+x"] {
+        assert_eq!(input.parse::<Version>(), Err(ParseError::InvalidNumber));
+    }
 }
 
 #[test]
@@ -97,15 +95,6 @@ fn display_round_trips_with_pre_release() {
         let v: Version = input.parse().unwrap();
 
         assert_eq!(v.to_string(), input);
-    }
-}
-
-#[test]
-fn short_forms_combine_with_pre_release() {
-    for (input, expected) in [("1-beta", "1.0.0-beta"), ("1.2-rc.1", "1.2.0-rc.1")] {
-        let v: Version = input.parse().unwrap();
-
-        assert_eq!(v.to_string(), expected);
     }
 }
 
@@ -180,13 +169,6 @@ fn pre_release_and_build_metadata_are_separate() {
 
     assert_eq!(v.pre_release(), Some("beta-1"));
     assert_eq!(v.build_metadata(), Some("sha-2"));
-}
-
-#[test]
-fn short_forms_combine_with_build_metadata() {
-    let v: Version = "1.2+sha".parse().unwrap();
-
-    assert_eq!(v.to_string(), "1.2.0+sha");
 }
 
 #[test]

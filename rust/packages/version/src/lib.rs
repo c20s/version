@@ -90,17 +90,11 @@ impl FromStr for Version {
         };
 
         let parts: Vec<&str> = core.split('.').collect();
-        if parts.len() > 3 {
+        let &[major, minor, patch] = parts.as_slice() else {
             return Err(ParseError::PartCount);
-        }
+        };
 
-        let mut numbers = [0; 3];
-        for (slot, part) in numbers.iter_mut().zip(parts) {
-            *slot = number(part)?;
-        }
-
-        let [major, minor, patch] = numbers;
-        let mut version = Self::new(major, minor, patch);
+        let mut version = Self::new(number(major)?, number(minor)?, number(patch)?);
         version.pre = pre.map(pre_release).transpose()?;
         version.build = build.map(build_metadata).transpose()?;
         Ok(version)

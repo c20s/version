@@ -4,15 +4,20 @@ Full [SemVer](https://semver.org/) parsing, and generating the next version from
 
 ## Behaviour
 
-- Input is the previous tag, e.g. `v1.2.3` or `1.2.3-beta.1+sha.abc`
+- Input is the previous tag, e.g. `v1.2.3` or `1.2.3-beta.1+sha.abc`, parsed loosely
 - Output never has a `v` prefix: `v1.2.3` in, `1.3.0` out
-- Input may omit minor and patch, they default to `0`: `1` is `1.0.0`, `1.2` is `1.2.0`
 - Output is always the full `major.minor.patch`
 - Build metadata is ignored for equality and ordering: `1.2.3+a` equals `1.2.3+b`
 - The change kind defaults to **feature** (minor bump)
 - The change kind can be overridden with **fix** (patch), **feature** (minor) or **breaking** (major)
 - Pre-release and build metadata are optional on the generated version
 - Bumping resets lower parts: `1.2.3` + breaking = `2.0.0`, `1.2.3` + feature = `1.3.0`, `1.2.3` + fix = `1.2.4`
+
+### Parsing
+
+- Strict parsing (`FromStr`) only accepts a valid SemVer: `major.minor.patch` with optional pre-release and build metadata
+- `v1.2.3`, `1.2` and `release-1.2.3` are errors when parsing strictly
+- Loose parsing reads the input from the tail and cuts everything before the longest suffix that is a valid SemVer, e.g. `v1.2.3` and `release-1.2.3` both give `1.2.3`
 
 ### Initial development (`0.y.z`)
 
@@ -65,13 +70,13 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] Parse `x.y.z` and `Display` (round-trip)
 - [ ] Typed parse error
 - [x] Reject invalid input per the SemVer spec (leading zeros, negatives, empty parts, more than three parts)
-- [x] Lenient parsing: missing minor and patch default to `0` (`1` is `1.0.0`, `1.2` is `1.2.0`)
+- [x] Strict parsing: only a valid SemVer is accepted
+- [ ] Loose parsing: cut everything before the longest valid SemVer suffix
 - [x] Pre-release identifiers
 - [x] Reject numeric pre-release identifiers with leading zeros (`1.0.0-01`)
 - [x] Build metadata
 - [x] Equality and hashing ignore build metadata
-- [ ] Optional `v` tag prefix when parsing
-- [ ] Output never includes the `v` prefix
+- [x] Output never includes the `v` prefix
 - [ ] Ordering following SemVer precedence (build metadata ignored)
 - [ ] `Change` enum: `Fix`, `Feature`, `Breaking`
 - [ ] `Version::next(Change)` with reset of lower parts
