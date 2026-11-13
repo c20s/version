@@ -2,6 +2,7 @@
 
 mod change;
 mod error;
+mod next;
 
 use std::cmp::Ordering;
 use std::fmt;
@@ -10,6 +11,7 @@ use std::str::FromStr;
 
 pub use change::Change;
 pub use error::ParseError;
+pub use next::{NextError, NextOptions};
 
 /// A version with the form `major.minor.patch`.
 ///

@@ -8,7 +8,7 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-use version::{Change, ParseError, Version};
+use version::{Change, NextError, NextOptions, ParseError, Version};
 
 #[test]
 fn parse_exposes_the_three_parts() {
@@ -399,6 +399,67 @@ fn bump_returns_none_when_a_part_would_overflow() {
     assert_eq!(v(&format!("1.{max}.0")).bump(Change::Feature), None);
     assert_eq!(v(&format!("{max}.0.0")).bump(Change::Breaking), None);
     assert!(v(&format!("{max}.0.0")).bump(Change::Feature).is_some());
+}
+
+fn next(input: &str, options: NextOptions) -> String {
+    v(input).next(&options).unwrap().to_string()
+}
+
+fn with(change: Change) -> NextOptions {
+    NextOptions::new().change(change)
+}
+
+#[test]
+fn next_defaults_to_a_feature_change() {
+    assert_eq!(next("1.2.3", NextOptions::new()), "1.3.0");
+    assert_eq!(next("0.3.1", NextOptions::new()), "0.3.2");
+    assert_eq!(next("1.2.3", with(Change::Feature)), "1.3.0");
+}
+
+#[test]
+fn next_can_be_overridden_with_fix_or_breaking() {
+    assert_eq!(next("1.2.3", with(Change::Fix)), "1.2.4");
+    assert_eq!(next("1.2.3", with(Change::Breaking)), "2.0.0");
+    assert_eq!(next("0.3.1", with(Change::Breaking)), "0.4.0");
+}
+
+#[test]
+fn next_never_carries_build_metadata() {
+    assert_eq!(next("1.2.3+sha", NextOptions::new()), "1.3.0");
+}
+
+#[test]
+fn next_releases_a_pre_release_when_no_change_is_given() {
+    assert_eq!(next("1.3.0-beta.1", NextOptions::new()), "1.3.0");
+    assert_eq!(next("1.3.0-beta.1+sha", NextOptions::new()), "1.3.0");
+}
+
+#[test]
+fn next_applies_an_explicit_change_when_releasing_from_a_pre_release() {
+    assert_eq!(next("1.3.0-beta.1", with(Change::Breaking)), "2.0.0");
+    assert_eq!(next("1.3.0-beta.1", with(Change::Feature)), "1.4.0");
+    assert_eq!(next("1.3.0-beta.1", with(Change::Fix)), "1.3.1");
+}
+
+#[test]
+fn next_works_on_a_loosely_parsed_tag() {
+    let previous = Version::parse_loose("v1.2.3").unwrap();
+
+    assert_eq!(previous.next(&NextOptions::new()).unwrap().to_string(), "1.3.0");
+}
+
+#[test]
+fn next_fails_when_a_part_would_overflow() {
+    let previous = v(&format!("1.2.{}", u64::MAX));
+
+    assert_eq!(previous.next(&with(Change::Fix)), Err(NextError::Overflow));
+}
+
+#[test]
+fn next_error_is_a_displayable_error() {
+    let boxed: Box<dyn std::error::Error> = Box::new(NextError::Overflow);
+
+    assert!(!boxed.to_string().is_empty());
 }
 
 #[test]

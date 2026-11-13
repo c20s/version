@@ -82,8 +82,8 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [x] `Change` enum: `Fix`, `Feature`, `Breaking`
 - [x] `Version::bump(Change)` with reset of lower parts, drops pre-release and build metadata
 - [ ] `Version::next(...)` combining change, pre-release and build metadata
-- [ ] Default change is `Feature`
-- [ ] Change is optional (`Option<Change>`) to tell explicit from default
+- [x] Default change is `Feature`
+- [x] Change is optional (`NextOptions::change`) to tell explicit from default
 - [ ] Explicit change on a pre-release tag with a pre-release requested returns an error (core is locked)
 - [x] `0.y.z` rules: breaking bumps minor, feature and fix bump patch
 - [ ] Explicit release of `1.0.0` (not reachable through `next`)
@@ -91,8 +91,8 @@ The requested pre-release is either a bare label (`beta`) or explicit (`beta.5`,
 - [ ] Bare label bumps the pre-release number when the label matches the previous tag
 - [ ] Bare label with a different label starts at `.1`
 - [ ] Explicit pre-release (`beta.5`) takes precedence over everything
-- [ ] No pre-release requested on a pre-release tag releases the stable version
-- [ ] No pre-release requested on a pre-release tag with an explicit change applies the change to the core (`1.3.0-beta.1` + breaking = `2.0.0`)
+- [x] No pre-release requested on a pre-release tag releases the stable version
+- [x] No pre-release requested on a pre-release tag with an explicit change applies the change to the core (`1.3.0-beta.1` + breaking = `2.0.0`)
 - [ ] Optional build metadata on the next version
 - [ ] Doc examples for the public API
 
