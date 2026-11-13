@@ -133,6 +133,22 @@ fn parse_rejects_invalid_pre_release() {
 }
 
 #[test]
+fn parse_rejects_leading_zeros_in_numeric_pre_release_identifiers() {
+    for input in ["1.0.0-01", "1.0.0-00", "1.0.0-alpha.01", "1.0.0-01.alpha"] {
+        assert_eq!(input.parse::<Version>(), Err(ParseError::LeadingZero));
+    }
+}
+
+#[test]
+fn parse_accepts_zero_in_pre_release_identifiers() {
+    for input in ["1.0.0-0", "1.0.0-alpha.0", "1.0.0-0a", "1.0.0-01a", "1.0.0-a01"] {
+        let v: Version = input.parse().unwrap();
+
+        assert_eq!(v.to_string(), input);
+    }
+}
+
+#[test]
 fn parse_error_is_a_displayable_error() {
     let err = "nope".parse::<Version>().unwrap_err();
     let boxed: Box<dyn std::error::Error> = Box::new(err);

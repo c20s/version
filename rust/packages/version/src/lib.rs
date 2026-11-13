@@ -77,15 +77,17 @@ impl FromStr for Version {
 }
 
 fn pre_release(part: &str) -> Result<String, ParseError> {
-    let valid = part
-        .split('.')
-        .all(|id| !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'));
+    for id in part.split('.') {
+        if id.is_empty() || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') {
+            return Err(ParseError::InvalidPreRelease);
+        }
 
-    if valid {
-        Ok(part.to_owned())
-    } else {
-        Err(ParseError::InvalidPreRelease)
+        let numeric = id.bytes().all(|b| b.is_ascii_digit());
+        if numeric && id.len() > 1 && id.starts_with('0') {
+            return Err(ParseError::LeadingZero);
+        }
     }
+    Ok(part.to_owned())
 }
 
 fn number(part: &str) -> Result<u64, ParseError> {
