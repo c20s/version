@@ -5,6 +5,7 @@ use std::fmt;
 pub enum ParseError {
     PartCount,
     InvalidNumber,
+    LeadingZero,
 }
 
 impl fmt::Display for ParseError {
@@ -12,6 +13,7 @@ impl fmt::Display for ParseError {
         match self {
             ParseError::PartCount => write!(f, "expected three parts: major.minor.patch"),
             ParseError::InvalidNumber => write!(f, "version parts must be non-negative integers"),
+            ParseError::LeadingZero => write!(f, "version parts must not have leading zeros"),
         }
     }
 }

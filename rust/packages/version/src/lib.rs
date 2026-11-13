@@ -63,6 +63,9 @@ fn number(part: &str) -> Result<u64, ParseError> {
     if part.is_empty() || !part.bytes().all(|b| b.is_ascii_digit()) {
         return Err(ParseError::InvalidNumber);
     }
+    if part.len() > 1 && part.starts_with('0') {
+        return Err(ParseError::LeadingZero);
+    }
     part.parse().map_err(|_| ParseError::InvalidNumber)
 }
 

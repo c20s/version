@@ -50,6 +50,20 @@ fn parse_rejects_non_numeric_parts() {
 }
 
 #[test]
+fn parse_rejects_leading_zeros() {
+    for input in ["01.2.3", "1.02.3", "1.2.03", "00.0.0"] {
+        assert_eq!(input.parse::<Version>(), Err(ParseError::LeadingZero));
+    }
+}
+
+#[test]
+fn parse_accepts_zero_as_a_part() {
+    let v: Version = "0.0.0".parse().unwrap();
+
+    assert_eq!((v.major(), v.minor(), v.patch()), (0, 0, 0));
+}
+
+#[test]
 fn parse_error_is_a_displayable_error() {
     let err = "nope".parse::<Version>().unwrap_err();
     let boxed: Box<dyn std::error::Error> = Box::new(err);
